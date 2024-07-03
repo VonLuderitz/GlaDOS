@@ -5,7 +5,6 @@ from loguru import logger
 
 from . import whisper_cpp_wrapper
 
-LANG = "en"
 WORD_LEVEL_TIMINGS = False
 BEAM_SEARCH = True
 
@@ -37,13 +36,13 @@ class ASR:
         model: The path to the model file to use.
     """
 
-    def __init__(self, model: str) -> None:
+    def __init__(self, model: str, language: str) -> None:
         # set whisper's logging to use the _unlog callback function, so that messages
         # are logged to the loguru logger instead of stdout/stderr
         whisper_cpp_wrapper.whisper_log_set(_unlog_func, ctypes.c_void_p(0))
         self.ctx = whisper_cpp_wrapper.whisper_init_from_file(model.encode("utf-8"))
         self.params = self._whisper_cpp_params(
-            language=LANG,
+            language=language,
             word_level_timings=WORD_LEVEL_TIMINGS,
             beam_search=BEAM_SEARCH,
         )

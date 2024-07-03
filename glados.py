@@ -24,7 +24,6 @@ from glados.llama import LlamaServer, LlamaServerConfig
 logger.remove(0)
 logger.add(sys.stderr, level="INFO")
 
-ASR_MODEL = "ggml-medium-32-2.en.bin"
 VAD_MODEL = "silero_vad.onnx"
 LLM_STOP_SEQUENCE = "<|eot_id|>"  # End of sentence token for Meta-Llama-3
 LLAMA3_TEMPLATE = "{% set loop_messages = messages %}{% for message in loop_messages %}{% set content = '<|start_header_id|>' + message['role'] + '<|end_header_id|>\n\n'+ message['content'] | trim + '<|eot_id|>' %}{% if loop.index0 == 0 %}{% set content = bos_token + content %}{% endif %}{{ content }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_header_id|>assistant<|end_header_id|>\n\n' }}{% endif %}"
@@ -53,8 +52,10 @@ class GladosConfig:
     announcement: Optional[str]
     personality_preprompt: List[dict[str, str]]
     interruptible: bool
-    voice_model: str = "glados.onnx"
-    speaker_id: int = None
+    voice_model: str
+    speaker_id: int
+    asr_model: str
+    language: str
 
     @classmethod
     def from_yaml(cls, path: str, key_to_config: Sequence[str] | None = ("Glados",)):
@@ -76,6 +77,8 @@ class Glados:
         self,
         voice_model: str,
         speaker_id: int,
+        asr_model: str,
+        language: str,
         completion_url: str,
         api_key: str | None = None,
         wake_word: str | None = None,
@@ -105,7 +108,7 @@ class Glados:
         self.completion_url = completion_url
         self.wake_word = wake_word
         self._vad_model = vad.VAD(model_path=str(Path.cwd() / "models" / VAD_MODEL))
-        self._asr_model = asr.ASR(model=str(Path.cwd() / "models" / ASR_MODEL))
+        self._asr_model = asr.ASR(model=str(Path.cwd() / "models" / asr_model), language=language)
         self._tts = tts.Synthesizer(
             model_path=str(Path.cwd() / "models" / voice_model),
             use_cuda=False,
@@ -180,6 +183,8 @@ class Glados:
         return cls(
             voice_model=config.voice_model,
             speaker_id=config.speaker_id,
+            asr_model=config.asr_model,
+            language=config.language,
             completion_url=config.completion_url,
             api_key=config.api_key,
             wake_word=config.wake_word,
